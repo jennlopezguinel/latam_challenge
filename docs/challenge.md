@@ -1,54 +1,33 @@
-# Create a markdown summary of the decisions and results
-md_summary = """
-# Model Development Summary
+# Resumen del Desarrollo del Modelo
 
-## 1. Objectives
-- Convert `exploration.ipynb` content into `model.py`.
-- Ensure best practices for Python-based Machine Learning development.
-- Evaluate model performance using AUC and accuracy metrics.
+## 1. Objetivos
+- Convertir el contenido de `exploration.ipynb` en `model.py`.
+- Garantizar las mejores prácticas para el desarrollo de Machine Learning basado en Python.
+- Evaluar el rendimiento del modelo utilizando métricas de AUC y precisión.
 
-## 2. Steps Taken
-### Data Exploration
-- Added a function `exploratory_analysis` to visualize:
-  - Flights by airline, day, and month.
+## 2. Pasos Realizados
+### Exploración de Datos
+- Se agregó una función `exploratory_analysis` para visualizar:
+  - Vuelos por aerolínea, día y mes.
 
-### Data Preprocessing
-- Converted date columns (`Fecha-I`, `Fecha-O`) to datetime format.
-- Handled null values by dropping rows where dates were missing.
-- Created new features:
-  - `period_day`: Categorizes flights into morning, afternoon, or night.
-  - `high_season`: Indicates if the flight occurred during a high-demand season.
-  - `min_diff`: Difference in minutes between scheduled and actual times.
-  - `delay`: Binary label based on a 15-minute threshold for delays.
+### Preprocesamiento de Datos
+- Se convirtieron las columnas de fecha (`Fecha-I`, `Fecha-O`) al formato datetime.
+- Se manejaron valores nulos eliminando filas donde faltaban fechas.
+- Se crearon nuevas características:
+  - `period_day`: Categoriza los vuelos en mañana, tarde o noche.
+  - `high_season`: Indica si el vuelo ocurrió durante una temporada de alta demanda.
+  - `min_diff`: Diferencia en minutos entre los horarios programados y reales.
+  - `delay`: Etiqueta binaria basada en un umbral de 15 minutos para los retrasos.
 
-### Model Development
-- Used `LogisticRegression` for binary classification.
-- Split data into training and testing sets (67% train, 33% test).
-- Trained the model with `max_iter=1000` to ensure convergence.
+### Desarrollo del Modelo
+- Se utilizó `LogisticRegression` para la clasificación binaria.
+- Los datos se dividieron en conjuntos de entrenamiento y prueba (67% entrenamiento, 33% prueba).
+- El modelo fue entrenado con `max_iter=1000` para garantizar la convergencia.
 
-## 3. Results
+## 3. Resultados
 - **AUC**: 0.517
-- **Accuracy**: 81.45%
+- **Precisión**: 81.45%
 
-## 4. Observations
-- The high accuracy reflects an imbalance in delay distribution (likely dominated by non-delayed flights).
-- AUC indicates poor distinction between delayed and non-delayed flights.
-
-## 5. Recommendations
-- Perform feature engineering to enhance discriminative power (e.g., interaction terms, external data sources).
-- Address class imbalance using techniques like oversampling, undersampling, or class weights in the logistic regression model.
-- Experiment with other algorithms (e.g., Random Forest, Gradient Boosting) for potentially better performance.
-
-## 6. Next Steps
-- Improve feature selection and engineering.
-- Evaluate additional metrics (e.g., precision, recall, F1-score) to capture model effectiveness.
-- Refine hyperparameters or explore other classification methods.
-
-"""
-
-# Save the markdown summary to a file
-md_path = '/mnt/data/model_summary.md'
-with open(md_path, 'w') as f:
-    f.write(md_summary)
-
-md_path
+## 4. Observaciones
+- La alta precisión refleja un desequilibrio en la distribución de los retrasos (probablemente dominada por vuelos no retrasados).
+- El AUC indica una baja capacidad para distinguir entre vuelos retrasados y no retrasados.
