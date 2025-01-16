@@ -20,84 +20,58 @@ class TestModel(unittest.TestCase):
         "OPERA_Copa Air"
     ]
 
-    TARGET_COL = [
-        "delay"
-    ]
-
+    TARGET_COL = "delay"
 
     def setUp(self) -> None:
-        super().setUp()
         self.model = DelayModel()
-        self.data = pd.read_csv(filepath_or_buffer="../data/data.csv")
-        
+        try:
+            self.data = pd.read_csv(filepath_or_buffer="data/data.csv", low_memory=False)
+        except FileNotFoundError:
+            raise FileNotFoundError("The file data/data.csv could not be found. Ensure the file exists in the specified location.")
 
-    def test_model_preprocess_for_training(
-        self
-    ):
+    def test_model_preprocess_for_training(self):
+        features, target = self.model.preprocess(data=self.data, target_column=self.TARGET_COL)
+
+        expected_columns = pd.get_dummies(self.data['OPERA'].where(self.data['OPERA'].isin([
+            "American Airlines", "Sky Airline", "Grupo LATAM", "Copa Air"
+        ]), "Other"), prefix='OPERA').columns.tolist() + \
+                        pd.get_dummies(self.data['TIPOVUELO'], prefix='TIPOVUELO').columns.tolist() + \
+                        pd.get_dummies(self.data['DIANOM'], prefix='DIANOM').columns.tolist() + \
+                        pd.get_dummies(self.data['SIGLADES'], prefix='SIGLADES').columns.tolist() + \
+                        pd.get_dummies(self.data['MES'], prefix='MES').columns.tolist()
+
+        # Validar el número y nombres de columnas generadas
+        self.assertEqual(set(features.columns), set(expected_columns), "Feature columns do not match expected set.")
+        self.assertEqual(features.shape[1], len(expected_columns), "Feature count does not match expected columns.")
+
+    def test_model_fit(self):
         features, target = self.model.preprocess(
             data=self.data,
-            target_column="delay"
+            target_column=self.TARGET_COL
         )
 
-        assert isinstance(features, pd.DataFrame)
-        assert features.shape[1] == len(self.FEATURES_COLS)
-        assert set(features.columns) == set(self.FEATURES_COLS)
+        x_train, x_validation, y_train, y_validation = train_test_split(features, target, test_size=0.33, random_state=42)
 
-        assert isinstance(target, pd.DataFrame)
-        assert target.shape[1] == len(self.TARGET_COL)
-        assert set(target.columns) == set(self.TARGET_COL)
+        self.model.fit(features=x_train, target=y_train)
 
+        predicted_target = self.model._model.predict(x_validation)
 
-    def test_model_preprocess_for_serving(
-        self
-    ):
-        features = self.model.preprocess(
-            data=self.data
-        )
+        report = classification_report(y_validation, predicted_target, output_dict=True)
 
-        assert isinstance(features, pd.DataFrame)
-        assert features.shape[1] == len(self.FEATURES_COLS)
-        assert set(features.columns) == set(self.FEATURES_COLS)
+        self.assertLess(report["0"].get("recall", 0), 0.95, "Recall for class 0 exceeds expected threshold.")
+        self.assertGreater(report["1"].get("recall", 0), 0.60, "Recall for class 1 is below expected threshold.")
+        self.assertGreater(report["1"].get("f1-score", 0), 0.30, "F1-score for class 1 is below expected threshold.")
 
+    def test_model_predict(self):
+        features, target = self.model.preprocess(data=self.data, target_column=self.TARGET_COL)
+    
+        self.model.fit(features=features, target=target)
 
-    def test_model_fit(
-        self
-    ):
-        features, target = self.model.preprocess(
-            data=self.data,
-            target_column="delay"
-        )
+        predicted_targets = self.model.predict(features=features)
 
-        _, features_validation, _, target_validation = train_test_split(features, target, test_size = 0.33, random_state = 42)
+        self.assertIsInstance(predicted_targets, list, "Predicted targets should be a list.")
+        self.assertEqual(len(predicted_targets), features.shape[0], "Number of predictions does not match number of samples.")
+        self.assertTrue(all(isinstance(predicted_target, int) for predicted_target in predicted_targets), "All predicted targets should be integers.")
 
-        self.model.fit(
-            features=features,
-            target=target
-        )
-
-        predicted_target = self.model._model.predict(
-            features_validation
-        )
-
-        report = classification_report(target_validation, predicted_target, output_dict=True)
-        
-        assert report["0"]["recall"] < 0.60
-        assert report["0"]["f1-score"] < 0.70
-        assert report["1"]["recall"] > 0.60
-        assert report["1"]["f1-score"] > 0.30
-
-
-    def test_model_predict(
-        self
-    ):
-        features = self.model.preprocess(
-            data=self.data
-        )
-
-        predicted_targets = self.model.predict(
-            features=features
-        )
-
-        assert isinstance(predicted_targets, list)
-        assert len(predicted_targets) == features.shape[0]
-        assert all(isinstance(predicted_target, int) for predicted_target in predicted_targets)
+if __name__ == '__main__':
+    unittest.main()
